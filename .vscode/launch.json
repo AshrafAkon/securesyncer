@@ -5,6 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Run main.py in securesyncer",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/securesyncer/main.py"
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",

@@ -1,2 +1,5 @@
 env
 .DS_STORE
+*.egg-info
+__pycache__
+*.pyc

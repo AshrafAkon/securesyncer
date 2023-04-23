@@ -1,23 +1,30 @@
 import os
 import sys
-from PyQt6.QtWidgets import QGraphicsDropShadowEffect, QApplication, QMainWindow, QWidget, QFileDialog, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout
-from PyQt6.QtGui import QFontDatabase, QFont
-from PyQt6. QtCore import Qt
 from typing import Callable
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon
+from PyQt6.QtWidgets import (QApplication, QDialog, QFileDialog,
+                             QGraphicsDropShadowEffect, QHBoxLayout, QLabel,
+                             QLineEdit, QMainWindow, QPushButton, QSizePolicy,
+                             QSpacerItem, QToolBar, QToolButton, QVBoxLayout,
+                             QWidget)
+
+from securesyncer.settings_dialog import SettingsDialog
+from PyQt6.QtCore import QSize
 FIELD_HEIGHT = 40
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, root_dir: str):
         super().__init__()
-
+        self.root_dir = root_dir
         # set window properties
         self.setWindowTitle("Sync Directories")
         self.setGeometry(100, 100, 500, 250)
         # Set maximum window height and width
         self.setMaximumSize(800, 600)
+        self.add_toolbar()
 
         # create input fields
         self.create_input_fields()
@@ -31,9 +38,37 @@ class MainWindow(QMainWindow):
         # add fonts to this current window
         self.set_font()
 
+    def add_toolbar(self):
+        toolbar = QToolBar("Main")
+        toolbar.setMovable(False)
+        self.addToolBar(toolbar)
+
+        settings_icon = QToolButton()
+        icon_path = os.path.join(
+            self.root_dir, 'assets', 'icons', 'icons8-settings-150.png')
+        settings_icon.setIcon(QIcon(icon_path))
+        settings_icon.setFixedSize(45, 45)
+        settings_icon.setIconSize(QSize(30, 30))
+        settings_icon.clicked.connect(self.open_password_dialog)
+
+        layout = QHBoxLayout()
+
+        spacer = QSpacerItem(
+            45, 45, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        layout.addItem(spacer)
+        layout.addWidget(settings_icon)
+
+        container = QWidget()  # Create a QWidget to hold the layout
+        container.setLayout(layout)  # Set the layout to the QWidget
+        toolbar.addWidget(container)  # Add the QWidget to the toolbar
+
+    def open_password_dialog(self):
+        password_dialog = SettingsDialog()
+        password_dialog.exec()
+
     def set_font(self):
         font_path = os.path.join(
-            ROOT_DIR, "assets/fonts/Roboto/Roboto-Bold.ttf")
+            self.root_dir, "assets/fonts/Roboto/Roboto-Bold.ttf")
         font_id = QFontDatabase.addApplicationFont(font_path)
         if font_id != -1:
             font_families = QFontDatabase.applicationFontFamilies(font_id)
@@ -41,8 +76,10 @@ class MainWindow(QMainWindow):
             self.setFont(roboto_font)
 
     def create_input_fields(self):
-        self.input1 = self.input_field('Select directory')
-        self.input2 = self.input_field('Select directory')
+        self.encrypted_dir_field = self.input_field(
+            'Select encrypted directory')
+        self.unencrypted_dir_field = self.input_field(
+            'Select unencrypted directory')
 
     def input_field(self, placeholder: str):
         _field = QLineEdit()
@@ -74,14 +111,14 @@ class MainWindow(QMainWindow):
     def create_layout(self):
         h_layout1 = QHBoxLayout()
         h_layout1.addStretch()  # Add stretch before the widgets
-        h_layout1.addWidget(self.input1)
+        h_layout1.addWidget(self.encrypted_dir_field)
         h_layout1.addWidget(self.button1)
         h_layout1.addStretch()  # Add stretch after the widgets
 
         h_layout2 = QHBoxLayout()
 
         h_layout2.addStretch()  # Add stretch before the widgets
-        h_layout2.addWidget(self.input2)
+        h_layout2.addWidget(self.unencrypted_dir_field)
         h_layout2.addWidget(self.button2)
         h_layout2.addStretch()  # Add stretch after the widgets
 
@@ -111,33 +148,29 @@ class MainWindow(QMainWindow):
         shadow_effect.setYOffset(2)
         widget.setGraphicsEffect(shadow_effect)
 
-    def select_unencrypted(self):
-        directory = QFileDialog.getExistingDirectory(self, "Select Directory")
-        self.input1.setText(directory)
+    def select_encrypted(self):
+        directory = QFileDialog.getExistingDirectory(
+            self, "Select encrypted directory")
+        self.encrypted_dir_field.setText(directory)
         self.check_sync_button()
 
-    def select_encrypted(self):
-        directory = QFileDialog.getExistingDirectory(self, "Select Directory")
-        self.input2.setText(directory)
+    def select_unencrypted(self):
+        directory = QFileDialog.getExistingDirectory(
+            self, "Select unencrypted directory")
+        self.unencrypted_dir_field.setText(directory)
         self.check_sync_button()
 
     def check_sync_button(self):
-        pass
+        dir1 = self.encrypted_dir_field.text()
+        dir2 = self.unencrypted_dir_field.text()
+
+        dir1_valid = os.path.isdir(dir1) and os.access(dir1, os.W_OK)
+        dir2_valid = os.path.isdir(dir2) and os.access(dir2, os.W_OK)
+
+        if dir1_valid and dir2_valid:
+            self.sync_button.setEnabled(True)
+        else:
+            self.sync_button.setEnabled(False)
 
     def sync_directories(self):
         pass
-
-
-def main():
-    app = QApplication(sys.argv)
-    stylesheet_path = os.path.join(ROOT_DIR, 'style.css')
-    with open(stylesheet_path) as f:
-        app.setStyleSheet(f.read())
-
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    main()

@@ -48,6 +48,12 @@ QLineEdit {
 
 }
 
+QPushButton#SyncButton:disabled {
+    background-color: #3b3b3b;
+    border-color: #ff0000;
+    color: #909090;
+}
+
 QHBoxLayout {
     background-color: red;
 }
